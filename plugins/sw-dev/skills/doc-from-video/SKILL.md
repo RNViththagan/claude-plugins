@@ -1,7 +1,7 @@
 ---
 name: doc-from-video
-description: Generates structured markdown documentation from a screen recording (.mov or .mp4). Extracts frames with ffmpeg, analyzes UI steps, selects the best screenshots, and produces a markdown doc with embedded screenshots. Use when the user provides a video walkthrough to document.
-argument-hint: "[video-path] [project-name]"
+description: Generates structured markdown documentation from a screen recording (.mov or .mp4). Uses ffmpeg to extract frames, analyzes the video in phases — high-level scan then section-by-section — taking timestamped notes with full UI inventory on new views and action tracking within views. Selects cursor-aware screenshots via burst extraction. Outputs a markdown doc and images folder, respecting existing docs/ structure. Use when the user provides a screen recording to document.
+argument-hint: "[video-path] [doc-name]"
 allowed-tools: Bash Read Write Glob
 context: fork
 ---
@@ -19,7 +19,7 @@ Run `ffmpeg -version`. If not found, detect the OS and instruct the user with th
 **2. Parse arguments**
 
 - `$1` — path to the video file (`.mov` or `.mp4`)
-- `$2` — name for this documentation (used for folder and doc naming)
+- `$2` — doc name (used for the output folder and markdown filename)
 
 If either is missing, ask the user before proceeding.
 
