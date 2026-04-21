@@ -1,0 +1,11 @@
+{
+  "name": "RNViththagan",
+  "description": "Claude Code plugins by RNViththagan",
+  "plugins": [
+    {
+      "name": "sw-dev",
+      "path": "plugins/sw-dev",
+      "description": "Software development tools — productivity and documentation skills for software developers"
+    }
+  ]
+}
