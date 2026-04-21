@@ -1,30 +1,22 @@
 ---
 name: doc-from-video
-description: Generates structured markdown documentation from a screen recording (.mov or .mp4). Uses ffmpeg to extract frames, analyzes the video in phases — high-level scan then section-by-section — taking timestamped notes with full UI inventory on new views and action tracking within views. Selects cursor-aware screenshots via burst extraction. Outputs a markdown doc and images folder, respecting existing docs/ structure. Use when the user provides a screen recording to document.
+description: Generates structured markdown documentation from a screen recording (.mov or .mp4). Uses ffmpeg to extract frames, analyzes the video in phases — high-level scan then section-by-section — taking timestamped notes with full UI inventory on new views and action tracking within views. Presents a doc outline to the user for review before proceeding. Selects cursor-aware screenshots via burst extraction, cropping to the relevant UI region where it improves clarity. Outputs a markdown doc and images folder, respecting existing docs/ structure. Use when the user provides a screen recording to document.
 allowed-tools: Bash Read Write Glob
 ---
 
-## doc-from-video
-
-Generate structured markdown documentation from a screen recording.
-
 ### Phase 1: Setup
 
-**1. Get the video path**
+**1. Get the video path** — ask if not provided.
 
-If the user hasn't provided a video path in the conversation, ask for it before proceeding.
-
-**2. Check ffmpeg is installed**
-
-Run `ffmpeg -version`. If not found, detect the OS and instruct the user with the appropriate install command, then stop.
+**2. Check ffmpeg** — run `ffmpeg -version`. If missing, give the install command for the user's OS and stop.
 
 **3. Create working folders**
 
 ```
-.docgen/        ← hidden working folder (deleted after)
+.docgen/        ← hidden working folder (kept until user confirms doc is final)
   frames/       ← low-res analysis frames
   _tmp/         ← burst frames for screenshot selection
-  temp-notes.md ← running notes during analysis
+  temp-notes.md ← running notes
 ```
 
 The video stays in its original location — do not copy it.
@@ -50,17 +42,15 @@ Read frames at roughly even intervals to understand what the video covers. From 
 
 Referred to as `<out>/` for the rest of this skill. Create `<out>/images/`.
 
-**6. Begin `.docgen/temp-notes.md`**
-
-Start writing notes immediately. Notes are the source of truth for the doc — be thorough.
+**6. Begin `.docgen/temp-notes.md`** — notes are the source of truth for the doc.
 
 Note-taking rules:
 
-- **Stay task-focused**: only write detailed notes for parts of the video relevant to the documentation goal. For unrelated sections (e.g. navigation, loading, side interactions), write a single brief marker — enough to find it again if needed.
-- **When a view changes entirely** (new screen, dialog, page, panel) and it is relevant: mark it clearly and document *everything* visible — all fields, labels, buttons, values, layout, navigation state. This is the full inventory of that view.
-- **Within the same view**: only note what changed — actions taken, fields filled, buttons clicked, responses shown.
-- **Every entry has a timestamp** (MM:SS) so it can be traced back to the video.
-- **Flag screenshot candidates** inline — mark the best timestamp in that section for a screenshot.
+- **Stay task-focused** — only detail parts relevant to the documentation goal; for unrelated sections (e.g. navigation, loading, side interactions), one brief marker is enough
+- **New view** (screen, dialog, page, panel): mark it clearly and document *everything* visible — all fields, labels, buttons, values, layout, navigation state
+- **Same view**: note only what changed — actions taken, fields filled, buttons clicked, responses shown
+- **Irrelevant section**: one `SKIP:` line with timestamp — enough to find it again if needed
+- Every entry has a timestamp (MM:SS); flag screenshot candidates inline
 
 Structure:
 
@@ -84,31 +74,37 @@ Screenshot candidate: 00:48
 
 ### Phase 3: Detailed section analysis
 
-**7. For each section identified, read all frames in that time range from `.docgen/frames/`**
+**7. Read all frames** for each section from `.docgen/frames/`.
 
-**8. For sections that need closer inspection, re-extract at 4fps (low-res)**
+**8. Re-extract at 4fps** for sections needing closer inspection:
 
 ```bash
 ffmpeg -i "<video-path>" -vf "fps=4,scale=960:-1" -ss <start> -to <end> ".docgen/frames/detail_%04d.jpg"
 ```
 
-**9. Append detailed notes for each section to `.docgen/temp-notes.md`**
-
-Follow the same note-taking rules from step 6 — full inventory on first view appearance, action tracking within a view.
+**9. Append detailed notes** per section — same rules as step 6.
 
 > **Long videos (> 10 min):** Process in ~5-minute partitions. Write notes per partition before moving on — do not try to hold the full video in context at once.
 
 ---
 
-### Phase 4: Screenshot extraction (cursor-aware)
+### Phase 4: User review
 
-**10. For each flagged screenshot timestamp, extract a short burst at original resolution**
+**10. Present the outline before proceeding** — show the doc title, each step with its planned screenshot timestamp, and sections being skipped.
+
+**Wait for user confirmation or corrections. Update notes with any changes before continuing.**
+
+---
+
+### Phase 5: Screenshot extraction
+
+**11. Extract a 5fps burst at original resolution around each candidate timestamp**
 
 ```bash
 ffmpeg -i "<video-path>" -vf "fps=5" -ss <t-2s> -to <t+2s> ".docgen/_tmp/burst_%04d.png"
 ```
 
-**11. Read the burst frames and select the best one**
+**12. Read the burst frames and select the best one**
 
 Pick the frame where:
 - The cursor is not blocking key content (form fields, labels, buttons)
@@ -116,21 +112,22 @@ Pick the frame where:
 - No loading spinner is visible
 - All relevant fields are visible and filled
 
-**12. Copy the chosen frame to `<out>/images/`**
+**13. Save to `<out>/images/`** — crop to the relevant region when it improves clarity (dialog, panel, result), copy full-screen otherwise.
 
 ```bash
-cp ".docgen/_tmp/burst_XXXX.png" "<out>/images/<NN>-<step-description>.png"
+# cropped
+ffmpeg -i ".docgen/_tmp/burst_XXXX.png" -vf "crop=<w>:<h>:<x>:<y>" "<out>/images/<NN>-<desc>.png"
+# full screen
+cp ".docgen/_tmp/burst_XXXX.png" "<out>/images/<NN>-<desc>.png"
 ```
 
-Naming: `01-open-form.png`, `02-fill-name-field.png`, etc.
-
-**13. Delete `.docgen/_tmp/`**
+**14. Delete `.docgen/_tmp/`** after all screenshots are saved.
 
 ---
 
-### Phase 5: Generate the documentation
+### Phase 6: Generate the documentation
 
-**14. Write `<out>/<doc-name>.md` from `.docgen/temp-notes.md`**
+**15. Write `<out>/<doc-name>.md` from `.docgen/temp-notes.md`**
 
 ```markdown
 # <Title>
@@ -157,6 +154,10 @@ Rules:
 - Use markdown tables for form fields: `| Field | Value |`
 - Image paths are relative to `<out>/` (e.g. `images/01-step.png`)
 
-**15. Clean up**
+---
 
-Delete `.docgen/` entirely. Final output is `<out>/images/` and `<out>/<doc-name>.md` only.
+### Phase 7: Clean up
+
+**16. Tell the user the doc is ready** — share the output path and ask them to review. Keep `.docgen/` in place in case corrections are needed.
+
+**17. Delete `.docgen/` only after the user confirms they are done.**
