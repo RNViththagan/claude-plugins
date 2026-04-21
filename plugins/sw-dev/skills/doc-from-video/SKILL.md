@@ -61,21 +61,42 @@ Use `fps=2` only if the video is fast-paced or under 3 minutes.
 
 Read frames at roughly even intervals across the full set to build a rough section outline. Do not read every frame at this stage.
 
-**7. Write `.docgen/temp-notes.md` — high-level outline**
+**7. Begin `.docgen/temp-notes.md`**
+
+Start writing notes immediately. Notes are the source of truth for the doc — be thorough.
+
+Note-taking rules:
+
+- **Stay task-focused**: only write detailed notes for parts of the video relevant to the documentation goal. For unrelated sections (e.g. navigation, loading, side interactions), write a single brief marker — enough to find it again if it turns out to be needed later.
+- **When a view changes entirely** (new screen, dialog, page, panel) and it is relevant: mark it clearly and document *everything* visible — all fields, labels, buttons, values, layout, navigation state. This is the full inventory of that view.
+- **Within the same view**: only note what changed — actions taken, fields filled, buttons clicked, responses shown.
+- **Every entry has a timestamp** (MM:SS) so it can be traced back to the video.
+- **Flag screenshot candidates** inline — mark the best timestamp in that section for a screenshot.
+
+Structure:
 
 ```
-## High-level outline
+## [00:00] <View name / screen title>
+FULL INVENTORY: <describe every visible element — fields, labels, buttons, panels, existing content>
+Screenshot candidate: 00:05
 
-- 00:00–00:45 — <section description>
-- 00:45–02:10 — <section description>
-- ...
+## [00:12] Action — <what happened>
+<what changed, what was filled/clicked/selected>
+
+## [00:28] <Unrelated section — brief marker>
+SKIP: <one line describing what's happening — not relevant to task>
+
+## [00:45] <New relevant view name>
+FULL INVENTORY: <everything visible on this new screen>
+Screenshot candidate: 00:48
+...
 ```
 
 ---
 
 ### Phase 3: Detailed section analysis
 
-**8. For each section, read all frames in that time range from `.docgen/frames/`**
+**8. For each section identified, read all frames in that time range from `.docgen/frames/`**
 
 **9. For sections that need closer inspection, re-extract at 4fps (low-res)**
 
@@ -83,16 +104,11 @@ Read frames at roughly even intervals across the full set to build a rough secti
 ffmpeg -i "$1" -vf "fps=4,scale=960:-1" -ss <start> -to <end> ".docgen/frames/detail_%04d.jpg"
 ```
 
-**10. Append detailed notes per section to `.docgen/temp-notes.md`**
+**10. Append detailed notes for each section to `.docgen/temp-notes.md`**
 
-For each key moment, note:
-- Timestamp (MM:SS)
-- UI state — what is visible on screen
-- Action performed — what the user is doing
-- Key content — field names, values, labels, button text
-- Screenshot candidate — flag the best timestamp for a screenshot
+Follow the same note-taking rules from step 7 — full inventory on first view appearance, action tracking within a view.
 
-> **Long videos (> 10 min):** Process in ~2-minute partitions. Write notes per partition before moving on — do not try to hold the full video in context at once.
+> **Long videos (> 10 min):** Process in ~5-minute partitions. Write notes per partition before moving on — do not try to hold the full video in context at once.
 
 ---
 
@@ -146,14 +162,11 @@ Naming: `01-open-form.png`, `02-fill-name-field.png`, etc.
 
 ### 2. <Step title>
 ...
-
-<!-- TODO: <unrecorded section name> -->
 ```
 
 Rules:
 - Screenshot goes *after* the instruction it illustrates, not before
 - Use markdown tables for form fields: `| Field | Value |`
-- Add `<!-- TODO -->` placeholders for any steps not covered in the video
 - Image paths are relative to `<out>/` (e.g. `images/01-step.png`)
 
 **16. Clean up**
