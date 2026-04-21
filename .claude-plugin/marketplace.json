@@ -1,10 +1,14 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "RNViththagan",
   "description": "Claude Code plugins by RNViththagan",
+  "owner": {
+    "name": "RNViththagan"
+  },
   "plugins": [
     {
       "name": "sw-dev",
-      "path": "plugins/sw-dev",
+      "source": "./plugins/sw-dev",
       "description": "Software development tools — productivity and documentation skills for software developers"
     }
   ]
