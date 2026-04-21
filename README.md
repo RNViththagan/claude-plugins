@@ -10,24 +10,14 @@ Add this marketplace to Claude Code once:
 /plugin marketplace add RNViththagan/claude-plugins
 ```
 
-Then install any plugin:
+Then browse and install individual plugins:
 
 ```
 /plugin install <plugin-name>@RNViththagan
 ```
 
-## Contributing
+## Available Plugins
 
-To add a new plugin:
-
-1. Create `plugins/<plugin-name>/` with the structure:
-   ```
-   plugins/<plugin-name>/
-   ├── .claude-plugin/
-   │   └── plugin.json
-   └── skills/
-       └── <skill-name>/
-           └── SKILL.md
-   ```
-2. Add an entry to `.claude-plugin/marketplace.json`
-3. Open a PR
+| Plugin | Description |
+|---|---|
+| [sw-dev](plugins/sw-dev/README.md) | Software development productivity and documentation tools |
